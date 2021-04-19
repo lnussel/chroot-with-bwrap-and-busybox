@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e
+prj="$1"
+d="$2"
+if [ -z "$prj" -o -z "$d" ]; then
+  echo "USAGE: $0 PRJ DST"
+  exit 1
+fi
+
+declare -a pkgs
+declare -a line
+while read -a line; do
+  case "${line[0]}" in
+    Preinstall:)
+      pkgs+=("${line[@]:1}")
+      ;;
+  esac
+done < <(osc meta prjconf $prj)
+
+echo "preinstalling ${pkgs[@]}"
+mkdir -p "$d"/.build.binaries
+for p in "${pkgs[@]}"; do
+  echo -n "$p ... "
+  osc api /build/"$prj"/standard/x86_64/_repository/"$p".rpm | rpm2cpio | ./bwbb "$d" cpio -d -i
+done
+
+# vim: sw=2 et

@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+d="$1"
+shift || { echo "USAGE: $0 DIR"; exit 1; }
+bb=/usr/bin/busybox-static
+if [ -z "$d" ]; then
+	echo "need dir" >&2
+	exit 1
+fi
+if [ ! -d "$d/.bb" ]; then
+	mkdir -p "$d/.bb"
+	$bb --list | while read b; do
+	ln -s busybox-static $d/.bb/$b
+	done
+fi
+[ "$1" ] || set -- "/.bb/sh"
+env -i PATH="/bin:/sbin:/usr/bin:/usr/sbin:/.bb" /usr/bin/bwrap --die-with-parent \
+	--bind  "$d" / \
+	--unshare-all \
+	--dev /dev \
+	--proc /proc \
+	--chdir / \
+	--uid 0 \
+	--ro-bind "$bb" /.bb/busybox-static \
+	"$@"

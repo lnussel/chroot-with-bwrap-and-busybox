@@ -1,0 +1,104 @@
+Bootstrap chroot environment as user with busybox and bwrap
+
+The scripts provided there can set up a chroot envirionment as
+regular user. All files are owned by the calling user but inside the bwrap
+environment it looks like things are running as root.
+The host needs to provide `busybox-static` and `bwrap`. When downloading from
+OBS also `osc` and `rpm2cpio`.
+
+The `bwbb` script expects a directory name as parameter and simply
+installs busybox-static into the chroot and launches it via bwrap.
+
+The `preinstall` script needs an OBS project name and a directory as
+parameter. It will read the project config to find the names of
+packages to preinstall. Those packages are then downloaded using
+`osc` and unpacked using `rpm2cpio`. The result is piped into the
+bwrap'ed cpio, so is running within the chroot already to prevent
+directory traversals.
+
+Example:
+
+$ ./preinstall openSUSE:Factory newroot
+preinstalling liblua5_4-5 aaa_base attr bash coreutils diffutils filesystem fillup glibc grep libbz2-1 libgcc_s1 libncurses6 pam permissions rpm rpm-config-SUSE sed tar libz1 libselinux1 libgcrypt20 libgpg-error0 liblzma5 libcap2 libacl1 libattr1 libpopt0 libelf1 libpcre1 libzstd1 libpcre2-8-0 libreadline8 libpcre2-8-0 libunwind
+liblua5_4-5 ... 522 blocks
+aaa_base ... 525 blocks
+attr ... 330 blocks
+bash ... 2664 blocks
+coreutils ... 12130 blocks
+diffutils ... 888 blocks
+filesystem ... 207 blocks
+fillup ... 75 blocks
+glibc ... 12337 blocks
+grep ... 1805 blocks
+libbz2-1 ... 254 blocks
+libgcc_s1 ... 207 blocks
+libncurses6 ... 2401 blocks
+pam ... 3276 blocks
+permissions ... 1 blocks
+rpm ... 5645 blocks
+rpm-config-SUSE ... 85 blocks
+sed ... 508 blocks
+tar ... 1112 blocks
+libz1 ... 234 blocks
+libselinux1 ... 329 blocks
+libgcrypt20 ... 2517 blocks
+libgpg-error0 ... 1304 blocks
+liblzma5 ... 406 blocks
+libcap2 ... 119 blocks
+libacl1 ... 70 blocks
+libattr1 ... 145 blocks
+libpopt0 ... 263 blocks
+libelf1 ... 207 blocks
+libpcre1 ... 1875 blocks
+libzstd1 ... 1591 blocks
+libpcre2-8-0 ... 1766 blocks
+libreadline8 ... 865 blocks
+libunwind ... 352 blocks
+$ l newroot
+total 36
+drwxr-xr-x 20 joesix users 4096 Apr 19 10:02 ./
+drwxr-xr-x  4 joesix users   96 Apr 19 10:02 ../
+drwxr-xr-x  2 joesix users 8192 Apr 19 10:01 .bb/
+drwxr-xr-x  2 joesix users 4096 Apr 19 10:01 bin/
+drwxr-xr-x  2 joesix users    6 Apr 19 10:01 boot/
+drwxr-xr-x  2 joesix users    6 Apr 19 10:01 dev/
+drwxr-xr-x 21 joesix users 4096 Apr 19 10:01 etc/
+drwxr-xr-x  2 joesix users    6 Apr 19 10:01 home/
+drwxr-xr-x  4 joesix users   49 Apr 19 10:01 lib/
+drwxr-xr-x  3 joesix users 4096 Apr 19 10:01 lib64/
+drwxr-xr-x  2 joesix users    6 Apr 19 10:01 mnt/
+drwxr-xr-x  2 joesix users    6 Apr 19 10:01 opt/
+drwxr-xr-x  2 joesix users    6 Apr 19 10:01 proc/
+drwx------  4 joesix users   43 Apr 19 10:01 root/
+drwxr-xr-x  2 joesix users    6 Apr 19 10:01 run/
+drwxr-xr-x  2 joesix users 4096 Apr 19 10:01 sbin/
+drwxr-xr-x  3 joesix users   17 Apr 19 10:01 srv/
+drwxrwxrwt  2 joesix users    6 Apr 19 10:01 tmp/
+drwxr-xr-x 13 joesix users 4096 Apr 19 10:01 usr/
+drwxr-xr-x 10 joesix users  112 Apr 19 10:01 var/
+$ ./bwbb newroot /bin/bash
+localhost:/ # id
+uid=0 gid=100 groups=100
+# l
+total 44
+drwxr-xr-x  20     0    100 4096 Apr 19 08:03 ./
+drwxr-xr-x  20     0    100 4096 Apr 19 08:03 ../
+-rw-------   1     0    100   50 Apr 19 08:06 .bash_history
+drwxr-xr-x   2     0    100 8192 Apr 19 08:01 .bb/
+drwxr-xr-x   2     0    100 4096 Apr 19 08:01 bin/
+drwxr-xr-x   2     0    100    6 Apr 19 08:01 boot/
+drwxr-xr-x   4     0    100  340 Apr 19 08:07 dev/
+drwxr-xr-x  21     0    100 4096 Apr 19 08:01 etc/
+drwxr-xr-x   2     0    100    6 Apr 19 08:01 home/
+drwxr-xr-x   4     0    100   49 Apr 19 08:01 lib/
+drwxr-xr-x   3     0    100 4096 Apr 19 08:01 lib64/
+drwxr-xr-x   2     0    100    6 Apr 19 08:01 mnt/
+drwxr-xr-x   2     0    100    6 Apr 19 08:01 opt/
+dr-xr-xr-x 459 65534 65534    0 Apr 19 08:07 proc/
+drwx------   4     0    100   43 Apr 19 08:01 root/
+drwxr-xr-x   2     0    100    6 Apr 19 08:01 run/
+drwxr-xr-x   2     0    100 4096 Apr 19 08:01 sbin/
+drwxr-xr-x   3     0    100   17 Apr 19 08:01 srv/
+drwxrwxrwt   2     0    100    6 Apr 19 08:01 tmp/
+drwxr-xr-x  13     0    100 4096 Apr 19 08:01 usr/
+drwxr-xr-x  10     0    100  112 Apr 19 08:01 var/
